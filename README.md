@@ -7,15 +7,23 @@ The goal is to use images of a structure (beam in this case) in its equilibrium 
 ## Methodology
 1. Train a voxel grid using the DVGO algorithm to represent the equilibrium scene. This can be accomplished by running `train_and_viz.bat`.
 2. Implement a ray bending network conditioned on time and space, such that
-$$ (u, v, w) = MLP(x, y, z, t) $$
-$$ (\sigma, \mathbf{c}) = \mathcal{G}(x - u, y - v, z - w)$$
+```math 
+(u, v, w) = MLP(x, y, z, t) 
+```
+```math 
+(\sigma, \mathbf{c}) = \mathcal{G}(x - u, y - v, z - w)
+```
 3. Freeze the parameters of the grid $\mathcal{G}$ representing the equilibrium scene. Train the ray bending MLP such that, in conjunction with the equilibrium grid, it can reproduce the video of the structure under free vibration.
 
 So long as the structure's deflection $\mathbf{\delta}$ depends only on coordinates $\mathbf{x}$ such that $\mathbf{\delta}\cdot\mathbf{x}=0$ (as is the case for beams and plates), it may be regularized by the physics of the structure. For example, a beam in free vibration is governed by
-$$ EI\frac{\partial^4v}{\partial x^4} + \rho A\frac{\partial^2 v}{\partial t^2} = 0 $$
+```math
+EI\frac{\partial^4v}{\partial x^4} + \rho A\frac{\partial^2 v}{\partial t^2} = 0
+```
 
 Once the MLP is trained, the material parameters ($E$, $\rho$) can be obtained by minimizing
-$$ \int\int \left( EI\frac{\partial^4v}{\partial x_3^4} + \rho A\frac{\partial^2 v}{\partial t^2} \right)^2 d\mathbf{x}dt $$
+```math
+\int\int \left( EI\frac{\partial^4v}{\partial x_3^4} + \rho A\frac{\partial^2 v}{\partial t^2} \right)^2 d\mathbf{x}dt
+```
 assuming the beam is oriented vertically.
 
 ## Status
