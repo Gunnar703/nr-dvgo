@@ -40,9 +40,9 @@ class DynamicObserver(nn.Module):
             xyz_max=self.base_grid[0].xyz_max
         )
 
-        self.base_grid[0].mask_cache.density = mask_cache_density
-        self.base_grid[0].density = density
-        self.base_grid[0].k0 = k0
+        self.base_grid[0].mask_cache.density = nn.Parameter(mask_cache_density, requires_grad=False)
+        self.base_grid[0].density = nn.Parameter(density, requires_grad=False)
+        self.base_grid[0].k0 = nn.Parameter(k0, requires_grad=False)
 
         # Update xyz_min / xyz_max to preserve interpolation behavior
         # - mask_cache.xyz_min
@@ -82,8 +82,8 @@ class DynamicObserver(nn.Module):
         self.particle_values_mc_density = grid2particles(
             grid_values=self.mask_cache_density,
             particle_coords=self.mc_particle_coords, 
-            xyz_min=self.base_grid[0].xyz_min, 
-            xyz_max=self.base_grid[0].xyz_max
+            xyz_min=self.base_grid[0].mask_cache.xyz_min, 
+            xyz_max=self.base_grid[0].mask_cache.xyz_max
         )
         self.particle_values_density = grid2particles(
             grid_values=self.density,
@@ -99,57 +99,59 @@ class DynamicObserver(nn.Module):
         )
     
     def _scale_grid(self, scale_factor_xyz: float, original_grid: torch.Tensor, xyz_min: torch.Tensor, xyz_max: torch.Tensor):
-        # Compute the side lengths of a voxel
-        x_max, y_max, z_max = xyz_max
-        x_min, y_min, z_min = xyz_min
-        nchannels, nvox_z, nvox_y, nvox_x = original_grid.shape[1:]
+        # # Compute the side lengths of a voxel
+        # x_max, y_max, z_max = xyz_max
+        # x_min, y_min, z_min = xyz_min
+        # nchannels, nvox_z, nvox_y, nvox_x = original_grid.shape[1:]
 
-        vox_len_x = (x_max - x_min) / nvox_x
-        vox_len_y = (y_max - y_min) / nvox_y
-        vox_len_z = (z_max - z_min) / nvox_z
+        # vox_len_x = (x_max - x_min) / nvox_x
+        # vox_len_y = (y_max - y_min) / nvox_y
+        # vox_len_z = (z_max - z_min) / nvox_z
 
-        # Compute the new grid dimensions
-        nvox_z_new = int(nvox_z * scale_factor_xyz[0])
-        nvox_y_new = int(nvox_y * scale_factor_xyz[1])
-        nvox_x_new = int(nvox_x * scale_factor_xyz[2])
+        # # Compute the new grid dimensions
+        # nvox_x_new = int(nvox_x * scale_factor_xyz[0])
+        # nvox_y_new = int(nvox_y * scale_factor_xyz[1])
+        # nvox_z_new = int(nvox_z * scale_factor_xyz[2])
         
-        # Create the new grid
-        new_grid = torch.zeros(1, nchannels, nvox_z, nvox_y, nvox_x).to(original_grid)
+        # # Create the new grid
+        # new_grid = torch.zeros(1, nchannels, nvox_z_new, nvox_y_new, nvox_x_new).to(original_grid)
 
-        # Place the old grid in the center of the new one
-        old_grid_start_i = (nvox_z_new - nvox_z) // 2
-        old_grid_start_j = (nvox_y_new - nvox_y) // 2
-        old_grid_start_k = (nvox_x_new - nvox_x) // 2
+        # # Place the old grid in the center of the new one
+        # old_grid_start_i = (nvox_z_new - nvox_z) // 2
+        # old_grid_start_j = (nvox_y_new - nvox_y) // 2
+        # old_grid_start_k = (nvox_x_new - nvox_x) // 2
 
-        old_grid_end_i = old_grid_start_i + nvox_z
-        old_grid_end_j = old_grid_start_j + nvox_y
-        old_grid_end_k = old_grid_start_k + nvox_x
+        # old_grid_end_i = old_grid_start_i + nvox_z
+        # old_grid_end_j = old_grid_start_j + nvox_y
+        # old_grid_end_k = old_grid_start_k + nvox_x
 
-        print(f"{new_grid.shape=}")
-        new_grid[
-            0, :,
-            old_grid_start_i : old_grid_end_i,
-            old_grid_start_j : old_grid_end_j,
-            old_grid_start_k : old_grid_end_k
-        ] = original_grid[0, :]
+        # new_grid[
+        #     0, :,
+        #     old_grid_start_i : old_grid_end_i,
+        #     old_grid_start_j : old_grid_end_j,
+        #     old_grid_start_k : old_grid_end_k
+        # ] = original_grid[0, :]
 
-        # Compute new xyz_min and xyz_max
-        start_padding = torch.tensor([
-            old_grid_start_k * vox_len_x,
-            old_grid_start_j * vox_len_y,
-            old_grid_start_i * vox_len_z,
-        ]).to(xyz_max)
+        # # Compute new xyz_min and xyz_max
+        # start_padding = torch.tensor([
+        #     old_grid_start_k * vox_len_x,
+        #     old_grid_start_j * vox_len_y,
+        #     old_grid_start_i * vox_len_z,
+        # ]).to(xyz_max)
 
-        end_padding = torch.tensor([
-            (nvox_x_new - old_grid_end_k) * vox_len_x,
-            (nvox_y_new - old_grid_end_j) * vox_len_y,
-            (nvox_z_new - old_grid_end_i) * vox_len_z,
-        ]).to(xyz_max)
+        # end_padding = torch.tensor([
+        #     (nvox_x_new - old_grid_end_k) * vox_len_x,
+        #     (nvox_y_new - old_grid_end_j) * vox_len_y,
+        #     (nvox_z_new - old_grid_end_i) * vox_len_z,
+        # ]).to(xyz_max)
 
-        new_xyz_min = xyz_min - start_padding
-        new_xyz_max = x_max + end_padding
+        # new_xyz_min = xyz_min - start_padding
+        # new_xyz_max = xyz_max + end_padding
 
-        return new_xyz_min, new_xyz_max, new_grid
+        # print(f"{vox_len_x=}, {vox_len_y=}, {vox_len_z=}")
+
+        # return new_xyz_min, new_xyz_max, new_grid
+        return xyz_min, xyz_max, original_grid
 
     def deform_grid(self, deformation_function: Callable[[torch.Tensor], torch.Tensor]):
         # deformation function: (x, y, z) -> (x', y', z')
@@ -187,9 +189,9 @@ class DynamicObserver(nn.Module):
         )
 
         # 3) Assign the deformed grids back to the appropriate attributes of self.base_grid[0]
-        self.base_grid[0].mask_cache.density = deformed_mc_density_grid
-        self.base_grid[0].density = deformed_density_grid
-        self.base_grid[0].k0 = deformed_k0_grid
+        self.base_grid[0].mask_cache.density = nn.Parameter(deformed_mc_density_grid, requires_grad=False)
+        self.base_grid[0].density = nn.Parameter(deformed_density_grid, requires_grad=False)
+        self.base_grid[0].k0 = nn.Parameter(deformed_k0_grid, requires_grad=False)
 
         # 4) Manually delete unneeded tensors to ensure they are erased from memory
         del deformed_particle_coords, deformed_mc_density_grid, deformed_density_grid, deformed_k0_grid

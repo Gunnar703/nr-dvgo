@@ -1,9 +1,10 @@
-import os
-
-import torch
-import dynamic_dvgo.static_dvgo.checkpoint_utils as checkpoint_utils
-from dataset.load_blender import load_data
 from dynamic_dvgo.dynamic_observer import DynamicObserver
+from dynamic_dvgo.static_dvgo import checkpoint_utils
+from dataset.load_blender import load_data
+
+import taichi as ti
+import torch
+import os
 
 
 def main():
@@ -56,6 +57,7 @@ def main():
     dynamic_observer.deform_grid(deformation_function=deformation_func)
 
 if __name__ == "__main__":
+    ti.init()
     main()
 
     
