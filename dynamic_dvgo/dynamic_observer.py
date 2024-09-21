@@ -98,60 +98,63 @@ class DynamicObserver(nn.Module):
             xyz_max=self.base_grid[0].xyz_max
         )
     
-    def _scale_grid(self, scale_factor_xyz: float, original_grid: torch.Tensor, xyz_min: torch.Tensor, xyz_max: torch.Tensor):
-        # # Compute the side lengths of a voxel
-        # x_max, y_max, z_max = xyz_max
-        # x_min, y_min, z_min = xyz_min
-        # nchannels, nvox_z, nvox_y, nvox_x = original_grid.shape[1:]
+    def _scale_grid(self, scale_factor_xyz: "tuple[float, float, float]", original_grid: torch.Tensor, xyz_min: torch.Tensor, xyz_max: torch.Tensor):
+        """Scales an input grid by expanding its bbox.
 
-        # vox_len_x = (x_max - x_min) / nvox_x
-        # vox_len_y = (y_max - y_min) / nvox_y
-        # vox_len_z = (z_max - z_min) / nvox_z
+        Args:
+            scale_factor_xyz (tuple[float, float, float]): Scale factors for the scene bounding box in x, y, and z.
+            original_grid (torch.Tensor): Grid to scale.
+            xyz_min (torch.Tensor): Tensor of shape [3,] representing the minimum coordinates of the bbox.
+            xyz_max (torch.Tensor): Tensor of shape [3,] representing the maximum coordinates of the bbox.
 
-        # # Compute the new grid dimensions
-        # nvox_x_new = int(nvox_x * scale_factor_xyz[0])
-        # nvox_y_new = int(nvox_y * scale_factor_xyz[1])
-        # nvox_z_new = int(nvox_z * scale_factor_xyz[2])
+        Returns:
+            new_xyz_min (torch.Tensor): The new minimum coordinates of the bbox.
+            new_xyz_max (torch.Tensor): The new maximum coordinates of the bbox.
+            new_grid (torch.Tensor): The new grid.
+        """
+
+        # Get shape of the original grid
+        _, num_channels, nvox_z, nvox_y, nvox_x = original_grid.shape
         
-        # # Create the new grid
-        # new_grid = torch.zeros(1, nchannels, nvox_z_new, nvox_y_new, nvox_x_new).to(original_grid)
+        # Compute size of the new grid
+        nvox_z_new = int(nvox_z * scale_factor_xyz[2])
+        nvox_y_new = int(nvox_y * scale_factor_xyz[1])
+        nvox_x_new = int(nvox_x * scale_factor_xyz[0])
 
-        # # Place the old grid in the center of the new one
-        # old_grid_start_i = (nvox_z_new - nvox_z) // 2
-        # old_grid_start_j = (nvox_y_new - nvox_y) // 2
-        # old_grid_start_k = (nvox_x_new - nvox_x) // 2
+        pad_z = (nvox_z_new - nvox_z) // 2
+        pad_y = (nvox_y_new - nvox_y) // 2
+        pad_x = (nvox_x_new - nvox_x) // 2
 
-        # old_grid_end_i = old_grid_start_i + nvox_z
-        # old_grid_end_j = old_grid_start_j + nvox_y
-        # old_grid_end_k = old_grid_start_k + nvox_x
+        # Initialize the new grid
+        new_grid = torch.zeros(
+            1, num_channels,
+            nvox_z + 2 * pad_z,
+            nvox_y + 2 * pad_y,
+            nvox_x + 2 * pad_x
+        ).to(original_grid)
 
-        # new_grid[
-        #     0, :,
-        #     old_grid_start_i : old_grid_end_i,
-        #     old_grid_start_j : old_grid_end_j,
-        #     old_grid_start_k : old_grid_end_k
-        # ] = original_grid[0, :]
+        # Place the old grid within the new grid
+        new_grid[0, :,
+            pad_z : nvox_z + pad_z,
+            pad_y : nvox_y + pad_y,
+            pad_x : nvox_x + pad_x
+        ] = original_grid[0, :]
 
-        # # Compute new xyz_min and xyz_max
-        # start_padding = torch.tensor([
-        #     old_grid_start_k * vox_len_x,
-        #     old_grid_start_j * vox_len_y,
-        #     old_grid_start_i * vox_len_z,
-        # ]).to(xyz_max)
+        # Compute the new xyz_min and xyz_max
+        voxel_len_x = (xyz_max[0] - xyz_min[0]) / nvox_x
+        voxel_len_y = (xyz_max[1] - xyz_min[1]) / nvox_y
+        voxel_len_z = (xyz_max[2] - xyz_min[2]) / nvox_z
 
-        # end_padding = torch.tensor([
-        #     (nvox_x_new - old_grid_end_k) * vox_len_x,
-        #     (nvox_y_new - old_grid_end_j) * vox_len_y,
-        #     (nvox_z_new - old_grid_end_i) * vox_len_z,
-        # ]).to(xyz_max)
+        xyz_shift = torch.tensor([
+            pad_x * voxel_len_x,
+            pad_y * voxel_len_y,
+            pad_z * voxel_len_z
+        ])
 
-        # new_xyz_min = xyz_min - start_padding
-        # new_xyz_max = xyz_max + end_padding
+        new_xyz_min = xyz_min - xyz_shift
+        new_xyz_max = xyz_max + xyz_shift
 
-        # print(f"{vox_len_x=}, {vox_len_y=}, {vox_len_z=}")
-
-        # return new_xyz_min, new_xyz_max, new_grid
-        return xyz_min, xyz_max, original_grid
+        return new_xyz_min, new_xyz_max, new_grid
 
     def deform_grid(self, deformation_function: Callable[[torch.Tensor], torch.Tensor]):
         # deformation function: (x, y, z) -> (x', y', z')

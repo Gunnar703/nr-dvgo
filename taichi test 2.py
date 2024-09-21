@@ -4,10 +4,13 @@ from dataset.load_blender import load_data
 
 import taichi as ti
 import torch
+import time
 import os
 
 
-def main():
+if __name__ == "__main__":
+    ti.init()
+
     BASE_DIR = "results"
     EXPNAME = "equilibrium"
 
@@ -40,11 +43,13 @@ def main():
         inverse_y=INVERSE_Y
     )
 
+    print("[main] Initializing dynamic observer")
     dynamic_observer = DynamicObserver(
         base_grid=model,
-        scale_factor_xyz=(4, 4, 1),
+        scale_factor_xyz=(1, 1, 1),
         n_particles=8
     )
+    print("[main] Done initializing dynamic observer")
 
     def deformation_func(xyz: torch.Tensor):
         x, y, z = xyz[:, 0:1], xyz[:, 1:2], xyz[:, 2:3]
@@ -54,10 +59,8 @@ def main():
         z = z
         return torch.cat((x, y, z), 1)
 
+    print("[main] Starting grid deformation.")
+    start = time.time()
     dynamic_observer.deform_grid(deformation_function=deformation_func)
-
-if __name__ == "__main__":
-    ti.init()
-    main()
-
+    print(f"[main] Grid deformation finished in {time.time() - start} [s].")
     
