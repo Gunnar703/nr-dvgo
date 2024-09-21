@@ -9,7 +9,7 @@ import os
 
 
 if __name__ == "__main__":
-    ti.init(debug=True)
+    ti.init(ti.gpu)
 
     BASE_DIR = "results"
     EXPNAME = "equilibrium"
@@ -34,6 +34,7 @@ if __name__ == "__main__":
 
     ckpt_path = os.path.join(BASE_DIR, EXPNAME, f"last_{PHASE}.tar")
     model = checkpoint_utils.load_model(ckpt_path)
+    model.cuda()
 
     render_kwargs=dict(
         near=data_dict["near"],
@@ -46,7 +47,7 @@ if __name__ == "__main__":
     print("[main] Initializing dynamic observer")
     dynamic_observer = DynamicObserver(
         base_grid=model,
-        scale_factor_xyz=(1, 1, 1),
+        scale_factor_xyz=(3, 3, 1),
         n_particles=1
     )
     print("[main] Done initializing dynamic observer")

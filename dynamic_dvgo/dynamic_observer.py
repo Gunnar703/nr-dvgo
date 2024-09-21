@@ -149,7 +149,7 @@ class DynamicObserver(nn.Module):
             pad_x * voxel_len_x,
             pad_y * voxel_len_y,
             pad_z * voxel_len_z
-        ])
+        ]).to(xyz_min)
 
         new_xyz_min = xyz_min - xyz_shift
         new_xyz_max = xyz_max + xyz_shift
