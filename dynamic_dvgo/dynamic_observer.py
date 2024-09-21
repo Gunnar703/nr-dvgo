@@ -166,11 +166,12 @@ class DynamicObserver(nn.Module):
         # 4) Manually delete unneeded tensors to ensure they are erased from memory
 
         # 1) Compute the new positions of each particle using deformation_function
+        deformed_mc_particle_coords = deformation_function(self.mc_particle_coords)
         deformed_particle_coords = deformation_function(self.particle_coords)
 
         # 2) Use the particles2grid function to create deformed grids
         deformed_mc_density_grid = particles2grid(
-            particle_coords=deformed_particle_coords,
+            particle_coords=deformed_mc_particle_coords,
             particle_values=self.particle_values_mc_density,
             xyz_min=self.base_grid[0].xyz_min,
             xyz_max=self.base_grid[0].xyz_max,

@@ -9,7 +9,7 @@ import os
 
 
 if __name__ == "__main__":
-    ti.init()
+    ti.init(debug=True)
 
     BASE_DIR = "results"
     EXPNAME = "equilibrium"
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     NEAR_CLIP = 0.2
     FAR_CLIP = 3
 
-    STEPSIZE = ...
+    STEPSIZE = 0.5
     WHITE_BKGD = True
     INVERSE_Y = False
     FLIP_X = False
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     dynamic_observer = DynamicObserver(
         base_grid=model,
         scale_factor_xyz=(1, 1, 1),
-        n_particles=8
+        n_particles=1
     )
     print("[main] Done initializing dynamic observer")
 

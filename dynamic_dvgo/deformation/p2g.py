@@ -120,6 +120,7 @@ class _Particles2Grid(torch.autograd.Function):
         """
         assert particle_coords.is_contiguous(), "particle_coords MUST be contiguous (call particle_coords.contiguous() before passing to this function)"
         assert particle_values.is_contiguous(), "particle_values MUST be contiguous (call particle_values.contiguous() before passing to this function)"
+        assert particle_values.shape[0] == particle_coords.shape[0], "particle_coords and particle_values MUST have the same shape in dimension 0"
 
         # Create numerator and denominator tensor. Used as a scratchpad by the kernel.
         num_channels = particle_values.shape[1]
@@ -129,13 +130,12 @@ class _Particles2Grid(torch.autograd.Function):
             device=particle_values.device,
         )
 
-        # Call taichi kernels; Modifies numerator_denominator in-place
+        # Call taichi kernel; Modifies numerator_denominator in-place
         _p2g_kernel_part_1(
             particle_coords=particle_coords,
             particle_values=particle_values,
             numerator_denominator=numerator_denominator,
         )
-
 
         # Save information for the backward pass
         ctx.save_for_backward(
