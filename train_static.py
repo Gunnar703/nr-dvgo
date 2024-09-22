@@ -218,7 +218,7 @@ def scene_rep_reconstruction(
         pervoxel_lr_downrate,
         data_dict["irregular_shape"]
     )
-    optimizer.set_pervoxel_lr(voxel_view_counts)
+    # optimizer.set_pervoxel_lr(voxel_view_counts)
 
     # If a voxel is seen less than three times, assume it is empty
     with torch.no_grad():
@@ -759,17 +759,17 @@ if __name__ == "__main__":
         data_dict=data_dict,
         basedir=BASE_DIR,
         expname=EXPNAME,
-        num_voxels=128**3,
+        num_voxels=100**3,
         batch_size=8192,
         N_iters_coarse=3_000,
-        N_iters_fine=4_500,
+        N_iters_fine=3_000,
         pervoxel_lr_downrate=1,
         tv_from=0,
         tv_every=1,
         mask_cache_thres=1e-3,
         alpha_init=1e-6,
         world_bound_scale=1.0,
-        fast_color_thres=0.0,
+        fast_color_thres=1e-4,
         no_reload=False,
         scale_epochs=[1_000, 2_000, 3_000],
         lrate_decay=20,  # lr decay by 0.1 after every lrate_decay*1000 steps
@@ -781,7 +781,7 @@ if __name__ == "__main__":
         weight_rgbper=0.1,
         weight_tv_density=0.1,
         weight_tv_k0=0.0,
-        weight_l1_loss=0.0,
+        weight_l1_loss=0.01,
         no_reload_optimizer=False,
         white_bkgd=WHITE_BKGD,
         inverse_y=INVERSE_Y,

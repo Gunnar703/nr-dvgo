@@ -57,23 +57,23 @@ class DynamicObserver(nn.Module):
 
         # Make a deep copy of each new grid as an attribute of this DynamicObserver object
         # This will serve as the base_grid
-        self.mask_cache_density = torch.clone(mask_cache_density.detach())
-        self.density = torch.clone(density.detach())
-        self.k0 = torch.clone(k0.detach())
+        self.mask_cache_density = torch.clone(self.base_grid[0].mask_cache.density.detach())
+        self.density = torch.clone(self.base_grid[0].density.detach())
+        self.k0 = torch.clone(self.base_grid[0].k0.detach())
 
         # Seed the new grid with particles. We want to do this here in order
         # to keep a consistent set of particles across all calls to deform_grid
         self.mc_particle_coords = place_particles(
-            grid_shape=mask_cache_density.shape[-3:],
-            xyz_min=mc_xyz_min,
-            xyz_max=mc_xyz_max,
+            grid_shape=self.base_grid[0].mask_cache.density.shape[-3:],
+            xyz_min=self.base_grid[0].mask_cache.xyz_min,
+            xyz_max=self.base_grid[0].mask_cache.xyz_max,
             particles_per_grid_cell=self.n_particles
         ).contiguous()
 
         self.particle_coords = place_particles(
-            grid_shape=density.shape[-3:],
-            xyz_min=xyz_min,
-            xyz_max=xyz_max,
+            grid_shape=self.base_grid[0].density.shape[-3:],
+            xyz_min=self.base_grid[0].xyz_min,
+            xyz_max=self.base_grid[0].xyz_max,
             particles_per_grid_cell=self.n_particles
         ).contiguous()
 
@@ -114,30 +114,30 @@ class DynamicObserver(nn.Module):
         """
 
         # Get shape of the original grid
-        _, num_channels, nvox_z, nvox_y, nvox_x = original_grid.shape
+        _, num_channels, nvox_x, nvox_y, nvox_z = original_grid.shape
         
         # Compute size of the new grid
-        nvox_z_new = int(nvox_z * scale_factor_xyz[2])
-        nvox_y_new = int(nvox_y * scale_factor_xyz[1])
         nvox_x_new = int(nvox_x * scale_factor_xyz[0])
+        nvox_y_new = int(nvox_y * scale_factor_xyz[1])
+        nvox_z_new = int(nvox_z * scale_factor_xyz[2])
 
-        pad_z = (nvox_z_new - nvox_z) // 2
-        pad_y = (nvox_y_new - nvox_y) // 2
         pad_x = (nvox_x_new - nvox_x) // 2
+        pad_y = (nvox_y_new - nvox_y) // 2
+        pad_z = (nvox_z_new - nvox_z) // 2
 
         # Initialize the new grid
         new_grid = torch.zeros(
             1, num_channels,
-            nvox_z + 2 * pad_z,
+            nvox_x + 2 * pad_x,
             nvox_y + 2 * pad_y,
-            nvox_x + 2 * pad_x
-        ).to(original_grid)
+            nvox_z + 2 * pad_z,
+        ).to(original_grid) - 1000 * (num_channels == 1)
 
         # Place the old grid within the new grid
         new_grid[0, :,
-            pad_z : nvox_z + pad_z,
+            pad_x : nvox_x + pad_x,
             pad_y : nvox_y + pad_y,
-            pad_x : nvox_x + pad_x
+            pad_z : nvox_z + pad_z,
         ] = original_grid[0, :]
 
         # Compute the new xyz_min and xyz_max
@@ -148,7 +148,7 @@ class DynamicObserver(nn.Module):
         xyz_shift = torch.tensor([
             pad_x * voxel_len_x,
             pad_y * voxel_len_y,
-            pad_z * voxel_len_z
+            pad_z * voxel_len_z,
         ]).to(xyz_min)
 
         new_xyz_min = xyz_min - xyz_shift

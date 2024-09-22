@@ -198,8 +198,8 @@ def particles2grid(
     denominator = numerator_denominator[0:1, -1].view(1, 1, *numerator_denominator.shape[2:])
 
     # Divide only at locations where denominator != 0
-    indices = denominator[0, 0] > 0
-    result = torch.zeros_like(numerator).to(numerator)
+    indices = denominator[0, 0] > 1e-6
+    result = torch.zeros_like(numerator).to(numerator) - 1000
     result[0, :, indices] = numerator[0, :, indices] / denominator[0, 0, indices]
 
     return result

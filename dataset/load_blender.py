@@ -78,7 +78,7 @@ def load_blender_data(base_dir: str) -> dict[str, Any]:
 
     # Get images and extrinsic properties
     for frame in meta["frames"][::skip]:
-        fname = os.path.join(base_dir, frame["file_path"] + ".png")
+        fname = os.path.join(base_dir, frame["file_path"])
         
         # Read the image
         all_images.append(imageio.imread(fname))

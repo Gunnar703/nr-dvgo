@@ -1,5 +1,7 @@
+from dynamic_dvgo.static_dvgo import checkpoint_utils, bbox_utils, dvgo
 from dynamic_dvgo.dynamic_observer import DynamicObserver
-from dynamic_dvgo.static_dvgo import checkpoint_utils
+from visualization.viz_cameras_3d import viz_cameras_3d
+from visualization.viz_volume_3d import viz_geom_3d
 from dataset.load_blender import load_data
 
 import taichi as ti
@@ -47,21 +49,35 @@ if __name__ == "__main__":
     print("[main] Initializing dynamic observer")
     dynamic_observer = DynamicObserver(
         base_grid=model,
-        scale_factor_xyz=(3, 3, 1),
-        n_particles=1
+        scale_factor_xyz=(2, 2, 1),
+        n_particles=8
     )
     print("[main] Done initializing dynamic observer")
 
-    def deformation_func(xyz: torch.Tensor):
-        x, y, z = xyz[:, 0:1], xyz[:, 1:2], xyz[:, 2:3]
+    def deformation_func(zyx: torch.Tensor):
+        z, y, x = zyx[:, 0:1], zyx[:, 1:2], zyx[:, 2:3]
 
         x = x
-        y = y + torch.sin(z)
+        y = y + torch.sin(z) / 2
         z = z
-        return torch.cat((x, y, z), 1)
+        return torch.cat((z, y, x), 1)
 
     print("[main] Starting grid deformation.")
     start = time.time()
     dynamic_observer.deform_grid(deformation_function=deformation_func)
     print(f"[main] Grid deformation finished in {time.time() - start} [s].")
-    
+
+    cam_list = viz_cameras_3d(
+        dynamic_observer.base_grid[0].xyz_min,
+        dynamic_observer.base_grid[0].xyz_max,
+        data_dict,
+        INVERSE_Y,
+        FLIP_X,
+        FLIP_Y,
+        dvgo.get_rays_of_a_view
+    )
+
+    viz_geom_3d(
+        model=dynamic_observer.base_grid[0],
+        cam_list=cam_list,
+    )

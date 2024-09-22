@@ -204,16 +204,16 @@ class DVGO(nn.Module):
         if self.verbose: print(f"[DVGO.scale_volume_grid] Done scaling voxel grid from {original_world_size} to {self.world_size}")
     
     def voxel_count_views(
-            self,
-            rays_o_tr: torch.Tensor,  # [N_rays, 3]
-            rays_d_tr: torch.Tensor,  # [N_rays, 3]
-            imsz: int,
-            near: float,
-            far: float,
-            stepsize: float,
-            downrate: int = 1,
-            irregular_shape: bool = False,
-        ):
+        self,
+        rays_o_tr: torch.Tensor,  # [N_rays, 3]
+        rays_d_tr: torch.Tensor,  # [N_rays, 3]
+        imsz: int,
+        near: float,
+        far: float,
+        stepsize: float,
+        downrate: int = 1,
+        irregular_shape: bool = False,
+    ):
 
         if self.verbose: print("[DVGO.voxel_count_views] Counting how many time each voxel is viewed")
 
